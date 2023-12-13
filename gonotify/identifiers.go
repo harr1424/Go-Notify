@@ -99,3 +99,54 @@ func HandleLocationAdd(res http.ResponseWriter, req *http.Request) {
 	// Respond with success status
 	res.WriteHeader(http.StatusCreated)
 }
+
+// Called when the remove_location endpoint is contacted
+// Expects to receive POST data describing an iOS device token and location
+func HandleLocationRemove(res http.ResponseWriter, req *http.Request) {
+	if req.URL.Path != "/remove_location" {
+		http.NotFound(res, req)
+		return
+	}
+
+	var requestBody LocationAddRequest
+
+	decoder := json.NewDecoder(req.Body)
+
+	if err := decoder.Decode(&requestBody); err != nil {
+		log.Println("Could not add new token from add request:", err)
+		http.Error(res, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Extract token and location from the request payload
+	token := requestBody.Token
+	locationToRemove := requestBody.Location
+
+	// Check if the token exists in the map
+	if locations, exists := tokenLocationMap[token]; !exists {
+		fmt.Println("Token not found:", token)
+	} else {
+		// Token exists, check if the location already exists
+		locationIndex := -1
+		for i, loc := range locations {
+			if loc == locationToRemove {
+				locationIndex = i
+				break
+			}
+		}
+
+		// If the location exists, remove it from the slice
+		if locationIndex != -1 {
+			tokenLocationMap[token] = append(locations[:locationIndex], locations[locationIndex+1:]...)
+			fmt.Println("Location removed for the token:", token)
+		} else {
+			fmt.Println("Location not found for the token:", token)
+		}
+	}
+
+	// Print the updated map
+	fmt.Printf("Updated tokenLocationMap: %v\n", tokenLocationMap)
+
+	// Respond with success status
+	res.WriteHeader(http.StatusCreated)
+}

@@ -11,6 +11,8 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/register", gonotify.RegisterToken)
 	mux.HandleFunc("/add_location", gonotify.HandleLocationAdd)
+	mux.HandleFunc("/remove_location", gonotify.HandleLocationRemove)
+
 
 	go func() {
 		for {
