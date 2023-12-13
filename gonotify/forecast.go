@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"time"
+	"strconv"
 )
 
 type ForecastResponse struct {
@@ -26,8 +27,8 @@ type ForecastResponse struct {
 	} `json:"hourly"`
 }
 
-func GetForecast() {
-	url := "https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&hourly=temperature_2m&forecast_days=3"
+func getForecastAndNotify(targetDevice token, lat string, lon string) {
+	url := fmt.Sprintf("https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s&hourly=temperature_2m&forecast_days=3", lat, lon)
 
 	response, err := http.Get(url)
 	if err != nil {
@@ -65,11 +66,25 @@ func GetForecast() {
 				return
 			}
 
-			// Print the time and temperature for each entry in a human-readable format
-			fmt.Printf("Time: %s, Temperature: %.1f°C\n", timeParsed.Format(outputTimeFormat), forecast.Hourly.Temperature2m[i])
+			temp := forecast.Hourly.Temperature2m[i]
+			time := timeParsed.Format(outputTimeFormat)
+
+			fmt.Printf("Time: %s, Temperature: %.1f°C\n", time, temp)
+
+			if (temp < 3.0) {
+				sendPushNotification(targetDevice, time, strconv.FormatFloat(temp, 'f', -1, 64))
+			}
 		}
 
 	} else {
 		fmt.Printf("Failed to retrieve data. Status code: %d\n", response.StatusCode)
+	}
+}
+
+func CheckAllLocationsForFrost() {
+	for token, allLocations := range tokenLocationMap {
+		for _, location := range allLocations {
+			getForecastAndNotify(token, location.Latitude, location.Longitude)
+		}
 	}
 }

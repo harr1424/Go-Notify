@@ -12,18 +12,18 @@ import (
 
 /*
 This file contains logic to encrypt a token before it is stored on the local filesystem,
-and decrypt tokens read from a file. A key and nonce are defined in order to perform AES-GCM
+and decrypt tokens read from a file. A Key and nonce are defined in order to perform AES-GCM
 authenticated encryption.
 
-IMPORTANT: The key is written to a local file.
+IMPORTANT: The Key is written to a local file.
 Whenever possible, it should be stored in a more secure location,
 separate from the data that it encrypts.
 
-Even better, CSPs offer database solutions better suited to storing devicd tokens. 
+Even better, CSPs offer database solutions better suited to storing devicd tokens.
 In the future, one of these solutions will be used insteead.
 */
 
-var key = make([]byte, 32)
+var Key = make([]byte, 32)
 
 func encryptToken(t token) string {
 	original := t.ID // ID is string member of token
@@ -35,7 +35,7 @@ func encryptToken(t token) string {
 		log.Println("Error reading random bytes into nonce:", err)
 	}
 
-	block, err := aes.NewCipher(key)
+	block, err := aes.NewCipher(Key)
 	if err != nil {
 		log.Println("Error creating cipher during encrypt:", err)
 	}
@@ -64,7 +64,7 @@ func decryptToken(s string) string {
 	nonce := enc[0:12]
 	ciphertext := enc[12:]
 
-	block, err := aes.NewCipher(key)
+	block, err := aes.NewCipher(Key)
 	if err != nil {
 		log.Println("Error creating cipher during decrypt:", err)
 	}
@@ -83,38 +83,38 @@ func decryptToken(s string) string {
 	return originalAsString
 }
 
-func handleCrypto(key *[]byte) {
-	if _, err := os.Stat("key.key"); errors.Is(err, os.ErrNotExist) {
+func HandleCrypto(Key *[]byte) {
+	if _, err := os.Stat("Key.Key"); errors.Is(err, os.ErrNotExist) {
 		log.Println("Key file not found. Creating one...")
-		key_file, err := os.OpenFile("key.key", os.O_CREATE|os.O_WRONLY, 0600)
+		Key_file, err := os.OpenFile("Key.Key", os.O_CREATE|os.O_WRONLY, 0600)
 		if err != nil {
 			log.Println("Error creating file:", err)
 		}
 
-		defer key_file.Close()
+		defer Key_file.Close()
 
-		_, err = rand.Read(*key)
+		_, err = rand.Read(*Key)
 		if err != nil {
-			log.Println("Error creating key:", err)
+			log.Println("Error creating Key:", err)
 		}
 
-		_, err = key_file.Write(*key)
+		_, err = Key_file.Write(*Key)
 		if err != nil {
-			log.Println("Error writing key to file:", err)
+			log.Println("Error writing Key to file:", err)
 		}
 
 	} else {
 		log.Println("Crypto files found, attempting to read...")
-		key_file, err := os.OpenFile("key.key", os.O_RDONLY, 0644)
+		Key_file, err := os.OpenFile("Key.Key", os.O_RDONLY, 0644)
 		if err != nil {
-			log.Println("Error accessing key file:", err)
+			log.Println("Error accessing Key file:", err)
 		}
 
-		defer key_file.Close()
+		defer Key_file.Close()
 
-		_, err = key_file.Read(*key)
+		_, err = Key_file.Read(*Key)
 		if err != nil {
-			log.Println("Error reading key from file:", err)
+			log.Println("Error reading Key from file:", err)
 		}
 	}
 

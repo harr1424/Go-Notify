@@ -1,18 +1,22 @@
 package main
 
-import "harr1424/go_notify/gonotify"
+import (
+	"fmt"
+	"harr1424/go_notify/gonotify"
+	"log"
+	"net/http"
+)
 
 func main() {
-	// handleCrypto(&key)
+	gonotify.HandleCrypto(&gonotify.Key)
 
-	// readTokensFromFile()
-	// fmt.Println("All tokens (from file):", tokens)
+	gonotify.ReadTokensFromFile()
+	fmt.Println("All tokens (from file):", gonotify.Tokens)
 
-	// mux := http.NewServeMux()
-	// mux.HandleFunc("/register", createNewToken)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/register", gonotify.CreateNewToken)
 
-	// log.Fatal(http.ListenAndServe("0.0.0.0:5050", nil))
+	log.Fatal(http.ListenAndServe("0.0.0.0:5050", nil))
 	//log.Fatal(http.ListenAndServeTLS(":5050", "localhost.crt", "localhost.key", nil)) // support TLS when available
 
-	gonotify.GetForecast()
 }

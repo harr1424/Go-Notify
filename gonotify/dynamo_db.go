@@ -13,7 +13,7 @@ import (
 
 const dynamoDBTableName = "DeviceTokensAndLocations"
 
-func UpdateTokenLocationMap(tokenLocationMap map[string][]Location) {
+func UpdateTokenLocationMap(tokenLocationMap map[token][]Location) {
 	// Create a DynamoDB svc
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithRegion("us-west-2"),
@@ -24,7 +24,7 @@ func UpdateTokenLocationMap(tokenLocationMap map[string][]Location) {
 	svc := dynamodb.NewFromConfig(cfg)
 
 	// Iterate over map and store data in DynamoDB
-	for tokenID, locations := range tokenLocationMap {
+	for token, locations := range tokenLocationMap {
 		// Convert locations to DynamoDB AttributeValue
 		avList, err := attributeValueList(locations)
 		if err != nil {
@@ -36,7 +36,7 @@ func UpdateTokenLocationMap(tokenLocationMap map[string][]Location) {
 		input := &dynamodb.PutItemInput{
 			TableName: aws.String(dynamoDBTableName),
 			Item: map[string]types.AttributeValue{
-				"TokenID":   &types.AttributeValueMemberS{Value: tokenID},
+				"token":   &types.AttributeValueMemberS{Value: token.ID},
 				"Locations": avList,
 			},
 		}
@@ -46,7 +46,7 @@ func UpdateTokenLocationMap(tokenLocationMap map[string][]Location) {
 		if err != nil {
 			fmt.Println("Error putting item into DynamoDB:", err)
 		} else {
-			fmt.Printf("Successfully added data for Token ID %s to DynamoDB\n", tokenID)
+			fmt.Printf("Successfully added data for Token ID %s to DynamoDB\n", token)
 		}
 	}
 }

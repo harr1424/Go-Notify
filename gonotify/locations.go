@@ -16,11 +16,11 @@ type Location struct {
 }
 
 // A map associating tokens with locations to be notified about
-var tokenLocationMap = make(map[string][]Location)
+var tokenLocationMap = make(map[token][]Location)
 
 func AddLocation(targetToken token, location Location) {
 	// Check if the slice for the token exists in the map
-	locations, exists := tokenLocationMap[targetToken.ID]
+	locations, exists := tokenLocationMap[targetToken]
 
 	// If it doesn't exist, create a new slice
 	if !exists {
@@ -31,5 +31,5 @@ func AddLocation(targetToken token, location Location) {
 	locations = append(locations, location)
 
 	// Update the map with the new slice of locations
-	tokenLocationMap[targetToken.ID] = locations
+	tokenLocationMap[targetToken] = locations
 }
