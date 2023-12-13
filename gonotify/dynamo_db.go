@@ -13,7 +13,7 @@ import (
 
 const dynamoDBTableName = "DeviceTokensAndLocations"
 
-func UpdateTokenLocationMap(tokenLocationMap map[token][]Location) {
+func UpdateTokenLocationMap(tokenLocationMap map[string][]Location) {
 	// Create a DynamoDB svc
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithRegion("us-west-2"),
@@ -36,7 +36,7 @@ func UpdateTokenLocationMap(tokenLocationMap map[token][]Location) {
 		input := &dynamodb.PutItemInput{
 			TableName: aws.String(dynamoDBTableName),
 			Item: map[string]types.AttributeValue{
-				"token":   &types.AttributeValueMemberS{Value: token.ID},
+				"token":     &types.AttributeValueMemberS{Value: token},
 				"Locations": avList,
 			},
 		}

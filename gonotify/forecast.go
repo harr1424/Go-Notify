@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 	"strconv"
+	"time"
 )
 
 type ForecastResponse struct {
@@ -27,7 +27,7 @@ type ForecastResponse struct {
 	} `json:"hourly"`
 }
 
-func getForecastAndNotify(targetDevice token, lat string, lon string) {
+func getForecastAndNotify(targetDevice string, lat string, lon string) {
 	url := fmt.Sprintf("https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s&hourly=temperature_2m&forecast_days=3", lat, lon)
 
 	response, err := http.Get(url)
@@ -71,7 +71,7 @@ func getForecastAndNotify(targetDevice token, lat string, lon string) {
 
 			fmt.Printf("Time: %s, Temperature: %.1f°C\n", time, temp)
 
-			if (temp < 3.0) {
+			if temp < 3.0 {
 				sendPushNotification(targetDevice, time, strconv.FormatFloat(temp, 'f', -1, 64))
 			}
 		}

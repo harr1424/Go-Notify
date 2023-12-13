@@ -19,7 +19,7 @@ type alert struct {
 	Value string `json:"value"`
 }
 
-func sendPushNotification(targetToken token, time string, value string) {
+func sendPushNotification(targetToken string, time string, value string) {
 	newAlert := alert{Time: time, Value: value}
 
 	// load signing key from file
@@ -40,7 +40,7 @@ func sendPushNotification(targetToken token, time string, value string) {
 	payload := PAYLOAD.NewPayload().Alert("Frost Alert").AlertSubtitle(alertSubtitle)
 
 	notification := &apns2.Notification{
-		DeviceToken: targetToken.ID,
+		DeviceToken: targetToken,
 		Topic:       bundleId,
 		Payload:     payload,
 	}
