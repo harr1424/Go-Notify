@@ -7,6 +7,11 @@ import (
 	"net/http"
 )
 
+// Struct to unmarshall JSON object describing a token
+type TokenRequest struct {
+	Token string `json:"token"`
+}
+
 // Location struct to represent a geographical Location
 type Location struct {
 	Latitude  string `json:"latitude"`
@@ -19,7 +24,24 @@ type LocationAddRequest struct {
 	Location Location `json:"Location"`
 }
 
-var tokenLocationMap = make(map[string][]Location)
+var TokenLocationMap map[string][]Location
+
+func ReadRemoteTableContents() error {
+	result, isEmpty, err := RetrieveTokenLocationMap()
+	if err != nil {
+		return fmt.Errorf("error reading remote table contents: %v", err)
+	}
+
+	if isEmpty {
+		TokenLocationMap = make(map[string][]Location)
+		fmt.Println("DynamoDB table was found to be empty.")
+	} else {
+		TokenLocationMap = result
+		fmt.Println("DynamoDB table was read successfully.")
+	}
+
+	return nil
+}
 
 // Called when the register endpoint is contacted
 // Expects to receive POST data describing an iOS device token
@@ -29,19 +51,22 @@ func RegisterToken(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	var newToken string
+	var tokenRequest TokenRequest
 
 	decoder := json.NewDecoder(req.Body)
 
-	if err := decoder.Decode(&newToken); err != nil {
+	if err := decoder.Decode(&tokenRequest); err != nil {
 		log.Println("Could not create new token from register request): ", err)
 		return
 	}
 
-	if _, exists := tokenLocationMap[newToken]; !exists {
-		tokenLocationMap[newToken] = []Location{}
+	newToken := tokenRequest.Token
+
+	if _, exists := TokenLocationMap[newToken]; !exists {
+		TokenLocationMap[newToken] = []Location{}
+		fmt.Println("Added token: ", newToken)
 	} else {
-		fmt.Println("Token already exists in DeviceTokenLocationMap.")
+		fmt.Println("Token already exists in DeviceTokenLocationMap")
 	}
 
 	res.WriteHeader(http.StatusCreated)
@@ -70,9 +95,9 @@ func HandleLocationAdd(res http.ResponseWriter, req *http.Request) {
 	newLocation := requestBody.Location
 
 	// Check if the token exists in the map
-	if locations, exists := tokenLocationMap[token]; !exists {
+	if locations, exists := TokenLocationMap[token]; !exists {
 		// If the token doesn't exist, associate it with a new slice containing the new location
-		tokenLocationMap[token] = []Location{newLocation}
+		TokenLocationMap[token] = []Location{newLocation}
 		fmt.Println("Location added for the token:", token)
 	} else {
 		// Token exists, check if the location already exists
@@ -86,7 +111,7 @@ func HandleLocationAdd(res http.ResponseWriter, req *http.Request) {
 
 		// If the location doesn't exist, add it to the slice
 		if !locationExists {
-			tokenLocationMap[token] = append(tokenLocationMap[token], newLocation)
+			TokenLocationMap[token] = append(TokenLocationMap[token], newLocation)
 			fmt.Println("Location added for the token:", token)
 		} else {
 			fmt.Println("Location already exists for the token:", token)
@@ -94,7 +119,7 @@ func HandleLocationAdd(res http.ResponseWriter, req *http.Request) {
 	}
 
 	// Print the updated map
-	fmt.Printf("Updated tokenLocationMap: %v\n", tokenLocationMap)
+	fmt.Printf("Updated TokenLocationMap: %v\n", TokenLocationMap)
 
 	// Respond with success status
 	res.WriteHeader(http.StatusCreated)
@@ -123,7 +148,7 @@ func HandleLocationRemove(res http.ResponseWriter, req *http.Request) {
 	locationToRemove := requestBody.Location
 
 	// Check if the token exists in the map
-	if locations, exists := tokenLocationMap[token]; !exists {
+	if locations, exists := TokenLocationMap[token]; !exists {
 		fmt.Println("Token not found:", token)
 	} else {
 		// Token exists, check if the location already exists
@@ -137,7 +162,7 @@ func HandleLocationRemove(res http.ResponseWriter, req *http.Request) {
 
 		// If the location exists, remove it from the slice
 		if locationIndex != -1 {
-			tokenLocationMap[token] = append(locations[:locationIndex], locations[locationIndex+1:]...)
+			TokenLocationMap[token] = append(locations[:locationIndex], locations[locationIndex+1:]...)
 			fmt.Println("Location removed for the token:", token)
 		} else {
 			fmt.Println("Location not found for the token:", token)
@@ -145,7 +170,7 @@ func HandleLocationRemove(res http.ResponseWriter, req *http.Request) {
 	}
 
 	// Print the updated map
-	fmt.Printf("Updated tokenLocationMap: %v\n", tokenLocationMap)
+	fmt.Printf("Updated TokenLocationMap: %v\n", TokenLocationMap)
 
 	// Respond with success status
 	res.WriteHeader(http.StatusCreated)

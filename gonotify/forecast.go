@@ -69,12 +69,14 @@ func getForecastAndNotify(targetDevice string, lat string, lon string) {
 			temp := forecast.Hourly.Temperature2m[i]
 			time := timeParsed.Format(outputTimeFormat)
 
-			fmt.Printf("Time: %s, Temperature: %.1f°C\n", time, temp)
-
 			if temp < 3.0 {
+				fmt.Printf("Sending frost notification to %s: ", targetDevice)
 				sendPushNotification(targetDevice, time, strconv.FormatFloat(temp, 'f', -1, 64))
+				break
 			}
 		}
+
+		fmt.Printf("Forecast obtained for (%s, %s): \n", lat, lon)
 
 	} else {
 		fmt.Printf("Failed to retrieve data. Status code: %d\n", response.StatusCode)
@@ -82,7 +84,7 @@ func getForecastAndNotify(targetDevice string, lat string, lon string) {
 }
 
 func CheckAllLocationsForFrost() {
-	for token, allLocations := range tokenLocationMap {
+	for token, allLocations := range TokenLocationMap {
 		for _, location := range allLocations {
 			getForecastAndNotify(token, location.Latitude, location.Longitude)
 		}

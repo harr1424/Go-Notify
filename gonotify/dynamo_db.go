@@ -36,7 +36,7 @@ func UpdateTokenLocationMap(tokenLocationMap map[string][]Location) {
 		input := &dynamodb.PutItemInput{
 			TableName: aws.String(dynamoDBTableName),
 			Item: map[string]types.AttributeValue{
-				"token":     &types.AttributeValueMemberS{Value: token},
+				"Token":     &types.AttributeValueMemberS{Value: token},
 				"Locations": avList,
 			},
 		}
@@ -45,8 +45,6 @@ func UpdateTokenLocationMap(tokenLocationMap map[string][]Location) {
 		_, err = svc.PutItem(context.Background(), input)
 		if err != nil {
 			fmt.Println("Error putting item into DynamoDB:", err)
-		} else {
-			fmt.Printf("Successfully added data for Token ID %s to DynamoDB\n", token)
 		}
 	}
 }
@@ -62,4 +60,51 @@ func attributeValueList(locations []Location) (types.AttributeValue, error) {
 		avList[i] = &types.AttributeValueMemberM{Value: avMap}
 	}
 	return &types.AttributeValueMemberL{Value: avList}, nil
+}
+
+func RetrieveTokenLocationMap() (map[string][]Location, bool, error) {
+	// Create a DynamoDB svc
+	cfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithRegion("us-west-2"),
+	)
+	if err != nil {
+		log.Fatalf("unable to load SDK config, %v", err)
+	}
+	svc := dynamodb.NewFromConfig(cfg)
+
+	// Prepare input for Scan operation
+	input := &dynamodb.ScanInput{
+		TableName: aws.String(dynamoDBTableName),
+	}
+
+	// Perform Scan operation
+	result, err := svc.Scan(context.Background(), input)
+	if err != nil {
+		fmt.Println("Error scanning DynamoDB table:", err)
+		return nil, true, err
+	}
+
+	// Convert DynamoDB items to map[string][]Location
+	tokenLocationMap := make(map[string][]Location)
+	for _, item := range result.Items {
+		token := item["Token"].(*types.AttributeValueMemberS).Value
+		locationsAttribute := item["Locations"].(*types.AttributeValueMemberL).Value
+
+		var locations []Location
+		for _, locationAttr := range locationsAttribute {
+			lat := locationAttr.(*types.AttributeValueMemberM).Value["Latitude"].(*types.AttributeValueMemberN).Value
+			lon := locationAttr.(*types.AttributeValueMemberM).Value["Longitude"].(*types.AttributeValueMemberN).Value
+
+			locations = append(locations, Location{
+				Latitude:  lat,
+				Longitude: lon,
+			})
+		}
+
+		tokenLocationMap[token] = locations
+	}
+
+	isEmpty := len(result.Items) == 0
+
+	return tokenLocationMap, isEmpty, nil
 }
