@@ -70,13 +70,13 @@ func getForecastAndNotify(targetDevice string, lat string, lon string) {
 			time := timeParsed.Format(outputTimeFormat)
 
 			if temp < 3.0 {
-				fmt.Printf("Sending frost notification to %s: ", targetDevice)
+				fmt.Printf("Sending frost notification to %s: \n", targetDevice)
 				sendPushNotification(targetDevice, time, strconv.FormatFloat(temp, 'f', -1, 64))
 				break
 			}
 		}
 
-		fmt.Printf("Forecast obtained for (%s, %s): \n", lat, lon)
+		fmt.Printf("Finished analyzing forecast for (%s, %s): \n", lat, lon)
 
 	} else {
 		fmt.Printf("Failed to retrieve data. Status code: %d\n", response.StatusCode)
@@ -84,9 +84,21 @@ func getForecastAndNotify(targetDevice string, lat string, lon string) {
 }
 
 func CheckAllLocationsForFrost() {
+	uniqueLocations := make(map[string]struct{})
+
 	for token, allLocations := range TokenLocationMap {
 		for _, location := range allLocations {
-			getForecastAndNotify(token, location.Latitude, location.Longitude)
+			// Generate a unique key for each location
+			locationKey := fmt.Sprintf("%s|%s", location.Latitude, location.Longitude)
+
+			// Check if the location has already been processed
+			if _, processed := uniqueLocations[locationKey]; !processed {
+				// Process the location
+				getForecastAndNotify(token, location.Latitude, location.Longitude)
+
+				// Mark the location as processed
+				uniqueLocations[locationKey] = struct{}{}
+			}
 		}
 	}
 }

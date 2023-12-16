@@ -154,7 +154,7 @@ func HandleLocationRemove(res http.ResponseWriter, req *http.Request) {
 		// Token exists, check if the location already exists
 		locationIndex := -1
 		for i, loc := range locations {
-			if loc == locationToRemove {
+			if loc.Latitude == locationToRemove.Latitude && loc.Longitude == locationToRemove.Longitude {
 				locationIndex = i
 				break
 			}
@@ -163,6 +163,7 @@ func HandleLocationRemove(res http.ResponseWriter, req *http.Request) {
 		// If the location exists, remove it from the slice
 		if locationIndex != -1 {
 			TokenLocationMap[token] = append(locations[:locationIndex], locations[locationIndex+1:]...)
+			UpdateTokenLocationMap(TokenLocationMap)
 			fmt.Println("Location removed for the token:", token)
 		} else {
 			fmt.Println("Location not found for the token:", token)
