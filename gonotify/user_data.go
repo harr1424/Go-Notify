@@ -64,6 +64,7 @@ func RegisterToken(res http.ResponseWriter, req *http.Request) {
 
 	if _, exists := TokenLocationMap[newToken]; !exists {
 		TokenLocationMap[newToken] = []Location{}
+		UpdateTokenLocationMap(TokenLocationMap)
 		fmt.Println("Added token: ", newToken)
 	} else {
 		fmt.Println("Token already exists in DeviceTokenLocationMap")
@@ -112,6 +113,7 @@ func HandleLocationAdd(res http.ResponseWriter, req *http.Request) {
 		// If the location doesn't exist, add it to the slice
 		if !locationExists {
 			TokenLocationMap[token] = append(TokenLocationMap[token], newLocation)
+			UpdateTokenLocationMap(TokenLocationMap)
 			fmt.Println("Location added for the token:", token)
 		} else {
 			fmt.Println("Location already exists for the token:", token)

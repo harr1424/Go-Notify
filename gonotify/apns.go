@@ -9,11 +9,6 @@ import (
 	APNS "github.com/sideshow/apns2/token"
 )
 
-/*
-This file contains the definition of an alert struct and a methods used to send a push notification request
-to Apple Push Notification services.
-*/
-
 type alert struct {
 	Time  string `json:"time"`
 	Value string `json:"value"`
