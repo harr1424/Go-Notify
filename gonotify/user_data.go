@@ -19,10 +19,10 @@ type Location struct {
 	Name      string `json:"name"`
 }
 
-// Struct used to deserialize a payload sent when adding a location
+// Struct used to deserialize a payload sent when adding or removing a location
 type LocationAddRequest struct {
 	Token    string   `json:"token"`
-	Location Location `json:"Location"`
+	Location Location `json:"location"`
 }
 
 var TokenLocationMap map[string][]Location
@@ -67,8 +67,6 @@ func RegisterToken(res http.ResponseWriter, req *http.Request) {
 		TokenLocationMap[newToken] = []Location{}
 		UpdateTokenLocationMap(TokenLocationMap)
 		fmt.Println("Added token: ", newToken)
-	} else {
-		fmt.Println("Token already exists in DeviceTokenLocationMap")
 	}
 
 	res.WriteHeader(http.StatusCreated)
