@@ -20,7 +20,7 @@ func sendPushNotification(targetToken string, time string, value string) {
 	// load signing key from file
 	authKey, err := APNS.AuthKeyFromFile("apnkey.p8")
 	if err != nil {
-		log.Println("Token Error:", err)
+		log.Println("Error sending push notification:", err)
 	}
 
 	// Generate JWT used for APNs
