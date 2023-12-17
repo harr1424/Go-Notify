@@ -17,6 +17,7 @@ type Location struct {
 	Latitude  string `json:"latitude"`
 	Longitude string `json:"longitude"`
 	Name      string `json:"name"`
+	Unit    string   `json:"unit"`
 }
 
 // Struct used to deserialize a payload sent when adding or removing a location

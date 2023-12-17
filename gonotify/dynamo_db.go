@@ -57,6 +57,7 @@ func attributeValueList(locations []Location) (types.AttributeValue, error) {
 			"Latitude":  &types.AttributeValueMemberN{Value: loc.Latitude},
 			"Longitude": &types.AttributeValueMemberN{Value: loc.Longitude},
 			"Name":      &types.AttributeValueMemberS{Value: loc.Name},
+			"Unit":      &types.AttributeValueMemberS{Value: loc.Unit},
 		}
 		avList[i] = &types.AttributeValueMemberM{Value: avMap}
 	}
@@ -96,11 +97,13 @@ func RetrieveTokenLocationMap() (map[string][]Location, bool, error) {
 			lat := locationAttr.(*types.AttributeValueMemberM).Value["Latitude"].(*types.AttributeValueMemberN).Value
 			lon := locationAttr.(*types.AttributeValueMemberM).Value["Longitude"].(*types.AttributeValueMemberN).Value
 			name := locationAttr.(*types.AttributeValueMemberM).Value["Name"].(*types.AttributeValueMemberS).Value
+			unit := locationAttr.(*types.AttributeValueMemberM).Value["Unit"].(*types.AttributeValueMemberS).Value
 
 			locations = append(locations, Location{
 				Latitude:  lat,
 				Longitude: lon,
 				Name:      name,
+				Unit:      unit,
 			})
 		}
 

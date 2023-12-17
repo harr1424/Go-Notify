@@ -54,7 +54,7 @@ func getForecastAndNotify(targetDevice string, location Location) {
 
 		const (
 			inputTimeFormat  = "2006-01-02T15:04"
-			outputTimeFormat = "January 2nd 3:04 PM"
+			outputTimeFormat = "January 2"
 		)
 
 		for i, t := range forecast.Hourly.Time {
@@ -71,7 +71,7 @@ func getForecastAndNotify(targetDevice string, location Location) {
 
 			if temp < 3.0 {
 				fmt.Printf("Sending frost notification to %s: \n", targetDevice)
-				sendPushNotification(targetDevice, location.Name, time, strconv.FormatFloat(temp, 'f', -1, 64))
+				sendPushNotification(targetDevice, location.Name, time, strconv.FormatFloat(temp, 'f', -1, 64), location.Unit)
 				break
 			}
 		}
