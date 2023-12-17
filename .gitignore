@@ -1,6 +1,7 @@
 secrets*
-
 *.p8
+*.gz
+frost
 
 *.exe
 *.exe~
