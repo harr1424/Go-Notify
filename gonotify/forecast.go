@@ -27,8 +27,8 @@ type ForecastResponse struct {
 	} `json:"hourly"`
 }
 
-func getForecastAndNotify(targetDevice string, lat string, lon string) {
-	url := fmt.Sprintf("https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s&hourly=temperature_2m&forecast_days=3", lat, lon)
+func getForecastAndNotify(targetDevice string, location Location) {
+	url := fmt.Sprintf("https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s&hourly=temperature_2m&forecast_days=3", location.Latitude, location.Longitude)
 
 	response, err := http.Get(url)
 	if err != nil {
@@ -71,12 +71,12 @@ func getForecastAndNotify(targetDevice string, lat string, lon string) {
 
 			if temp < 3.0 {
 				fmt.Printf("Sending frost notification to %s: \n", targetDevice)
-				sendPushNotification(targetDevice, time, strconv.FormatFloat(temp, 'f', -1, 64))
+				sendPushNotification(targetDevice, location.Name, time, strconv.FormatFloat(temp, 'f', -1, 64))
 				break
 			}
 		}
 
-		fmt.Printf("Finished analyzing forecast for (%s, %s): \n", lat, lon)
+		fmt.Printf("Finished analyzing forecast for (%s): \n", location.Name)
 
 	} else {
 		fmt.Printf("Failed to retrieve data. Status code: %d\n", response.StatusCode)
@@ -94,7 +94,7 @@ func CheckAllLocationsForFrost() {
 			// Check if the location has already been processed
 			if _, processed := uniqueLocations[locationKey]; !processed {
 				// Process the location
-				getForecastAndNotify(token, location.Latitude, location.Longitude)
+				getForecastAndNotify(token, location)
 
 				// Mark the location as processed
 				uniqueLocations[locationKey] = struct{}{}

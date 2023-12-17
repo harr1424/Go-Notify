@@ -16,6 +16,7 @@ type TokenRequest struct {
 type Location struct {
 	Latitude  string `json:"latitude"`
 	Longitude string `json:"longitude"`
+	Name      string `json:"name"`
 }
 
 // Struct used to deserialize a payload sent when adding a location
