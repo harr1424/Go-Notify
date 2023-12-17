@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"strconv"
 	"time"
@@ -69,9 +70,17 @@ func getForecastAndNotify(targetDevice string, location Location) {
 			temp := forecast.Hourly.Temperature2m[i]
 			time := timeParsed.Format(outputTimeFormat)
 
+			var tempString string
+
+			if location.Unit == "F" {
+				tempString = celsiusToFahrenheitString(temp)
+			} else {
+				tempString = strconv.FormatFloat(temp, 'f', -1, 64)
+			}
+
 			if temp < 3.0 {
 				fmt.Printf("Sending frost notification to %s: \n", targetDevice)
-				sendPushNotification(targetDevice, location.Name, time, strconv.FormatFloat(temp, 'f', -1, 64), location.Unit)
+				sendPushNotification(targetDevice, location.Name, time, tempString, location.Unit)
 				break
 			}
 		}
@@ -101,4 +110,9 @@ func CheckAllLocationsForFrost() {
 			}
 		}
 	}
+}
+
+func celsiusToFahrenheitString(celsius float64) string {
+	fahrenheit := math.Round((celsius * 9 / 5) + 32)
+	return fmt.Sprintf("%.0f", fahrenheit)
 }
