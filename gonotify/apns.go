@@ -42,7 +42,7 @@ func sendPushNotification(targetToken string, location string, time string, valu
 		Payload:     payload,
 	}
 
-	client := apns2.NewTokenClient(requestToken)
+	client := apns2.NewTokenClient(requestToken).Production()
 	result, err := client.Push(notification)
 	if err != nil {
 		log.Println("Error Sending Push Notification:", err)

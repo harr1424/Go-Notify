@@ -93,21 +93,9 @@ func getForecastAndNotify(targetDevice string, location Location) {
 }
 
 func CheckAllLocationsForFrost() {
-	uniqueLocations := make(map[string]struct{})
-
 	for token, allLocations := range TokenLocationMap {
 		for _, location := range allLocations {
-			// Generate a unique key for each location
-			locationKey := fmt.Sprintf("%s|%s", location.Latitude, location.Longitude)
-
-			// Check if the location has already been processed
-			if _, processed := uniqueLocations[locationKey]; !processed {
-				// Process the location
-				getForecastAndNotify(token, location)
-
-				// Mark the location as processed
-				uniqueLocations[locationKey] = struct{}{}
-			}
+			getForecastAndNotify(token, location)
 		}
 	}
 }
