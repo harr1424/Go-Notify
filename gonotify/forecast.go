@@ -4,10 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math"
 	"net/http"
-	"strconv"
-	"time"
 )
 
 type ForecastResponse struct {
@@ -53,34 +50,12 @@ func getForecastAndNotify(targetDevice string, location Location) {
 			return
 		}
 
-		const (
-			inputTimeFormat  = "2006-01-02T15:04"
-			outputTimeFormat = "January 2"
-		)
-
-		for i, t := range forecast.Hourly.Time {
-			// Parse the time string into a time.Time object
-			timeParsed, err := time.Parse(inputTimeFormat, t)
-			if err != nil {
-				fmt.Println("For timestamp:", t)
-				fmt.Println("Error parsing time:", err)
-				return
-			}
-
+		for i := range forecast.Hourly.Time {
 			temp := forecast.Hourly.Temperature2m[i]
-			time := timeParsed.Format(outputTimeFormat)
-
-			var tempString string
-
-			if location.Unit == "F" {
-				tempString = celsiusToFahrenheitString(temp)
-			} else {
-				tempString = strconv.FormatFloat(temp, 'f', -1, 64)
-			}
 
 			if temp < 3.0 {
 				fmt.Printf("Sending frost notification to %s: \n", targetDevice)
-				sendPushNotification(targetDevice, location.Name, time, tempString, location.Unit)
+				sendPushNotification(targetDevice, location.Name)
 				break
 			}
 		}
@@ -98,9 +73,4 @@ func CheckAllLocationsForFrost() {
 			getForecastAndNotify(token, location)
 		}
 	}
-}
-
-func celsiusToFahrenheitString(celsius float64) string {
-	fahrenheit := math.Round((celsius * 9 / 5) + 32)
-	return fmt.Sprintf("%.0f", fahrenheit)
 }
