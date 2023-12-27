@@ -9,6 +9,7 @@ import (
 
 func main() {
 
+	// Attempt to read existing data from DynamoDB 
 	err := gonotify.ReadRemoteTableContents()
 	if err != nil {
 		log.Fatal("Failed to read remote table contents: ", err)
@@ -19,6 +20,7 @@ func main() {
 	mux.HandleFunc("/add_location", gonotify.HandleLocationAdd)
 	mux.HandleFunc("/remove_location", gonotify.HandleLocationRemove)
 
+	// Every 12 hours check all saved locations for frost
 	go func() {
 		for {
 			gonotify.CheckAllLocationsForFrost()

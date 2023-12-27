@@ -12,7 +12,7 @@ type TokenRequest struct {
 	Token string `json:"token"`
 }
 
-// Location struct to represent a geographical Location
+// Struct to represent a geographical Location and assocated attributes
 type Location struct {
 	Latitude  string `json:"latitude"`
 	Longitude string `json:"longitude"`
@@ -26,6 +26,7 @@ type LocationAddRequest struct {
 	Location Location `json:"location"`
 }
 
+// A map with token keys and location values
 var TokenLocationMap map[string][]Location
 
 func ReadRemoteTableContents() error {

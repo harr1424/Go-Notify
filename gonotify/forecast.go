@@ -7,6 +7,7 @@ import (
 	"net/http"
 )
 
+// Struct describing the contents of a forecast object returned by Open Meteo
 type ForecastResponse struct {
 	Latitude             float64 `json:"latitude"`
 	Longitude            float64 `json:"longitude"`
@@ -50,9 +51,17 @@ func getForecastAndNotify(targetDevice string, location Location) {
 			return
 		}
 
+		/*
+			Originally time was used as part of the push notification, but since
+			notification are limited in length this has been removed.
+		*/
 		for i := range forecast.Hourly.Time {
 			temp := forecast.Hourly.Temperature2m[i]
 
+			/*
+				Notify all devices with a registered location forecasted to experience a temperature
+				below 3°C in the next forecast cycle.
+			*/
 			if temp < 3.0 {
 				fmt.Printf("Sending frost notification to %s: \n", targetDevice)
 				sendPushNotification(targetDevice, location.Name)

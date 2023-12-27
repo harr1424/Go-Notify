@@ -16,7 +16,7 @@ const dynamoDBTableName = "DeviceTokensAndLocations"
 func UpdateTokenLocationMap(tokenLocationMap map[string][]Location) {
 	// Create a DynamoDB svc
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithRegion("us-west-2"),
+		config.WithRegion(region),
 	)
 	if err != nil {
 		log.Fatalf("unable to load SDK config, %v", err)
@@ -67,7 +67,7 @@ func attributeValueList(locations []Location) (types.AttributeValue, error) {
 func RetrieveTokenLocationMap() (map[string][]Location, bool, error) {
 	// Create a DynamoDB svc
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithRegion("us-west-2"),
+		config.WithRegion(region),
 	)
 	if err != nil {
 		log.Fatalf("unable to load SDK config, %v", err)

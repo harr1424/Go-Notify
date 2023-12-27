@@ -25,7 +25,6 @@ func sendPushNotification(targetToken string, location string) {
 	}
 
 	// Construct alert information from alert struct
-	//alertTitle := fmt.Sprintf("Frost Alert %s", location)
 	alertSubtitle := fmt.Sprintf("Frost Alert for %s", location)
 	payload := PAYLOAD.NewPayload().AlertSubtitle(alertSubtitle)
 
