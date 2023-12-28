@@ -21,3 +21,5 @@ _test
 *.log
 
 .vscode/
+
+Go-Notify

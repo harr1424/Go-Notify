@@ -2,34 +2,29 @@ package gonotify
 
 import (
 	"context"
-	"fmt"
-	"log"
+	"errors"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
 const dynamoDBTableName = "DeviceTokensAndLocations"
 
-func UpdateTokenLocationMap(tokenLocationMap map[string][]Location) {
-	// Create a DynamoDB svc
-	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithRegion(region),
-	)
-	if err != nil {
-		log.Fatalf("unable to load SDK config, %v", err)
-	}
-	svc := dynamodb.NewFromConfig(cfg)
+var svc *dynamodb.Client
+
+func InitializeDynamoDBClient(client *dynamodb.Client) {
+	svc = client
+}
+
+func UpdateTokenLocationMap(ctx context.Context, tokenLocationMap map[string][]Location) error {
 
 	// Iterate over map and store data in DynamoDB
 	for token, locations := range tokenLocationMap {
 		// Convert locations to DynamoDB AttributeValue
 		avList, err := attributeValueList(locations)
 		if err != nil {
-			fmt.Println("Error marshaling location:", err)
-			continue
+			return errors.New("error constructing avList:" + err.Error())
 		}
 
 		// Prepare input for PutItem operation
@@ -44,9 +39,11 @@ func UpdateTokenLocationMap(tokenLocationMap map[string][]Location) {
 		// Perform PutItem operation
 		_, err = svc.PutItem(context.Background(), input)
 		if err != nil {
-			fmt.Println("Error putting item into DynamoDB:", err)
+			return errors.New("error putting item into DynamoDB:" + err.Error())
 		}
 	}
+
+	return nil
 }
 
 // Helper function to convert a slice of locations to DynamoDB AttributeValue
@@ -64,15 +61,7 @@ func attributeValueList(locations []Location) (types.AttributeValue, error) {
 	return &types.AttributeValueMemberL{Value: avList}, nil
 }
 
-func RetrieveTokenLocationMap() (map[string][]Location, bool, error) {
-	// Create a DynamoDB svc
-	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithRegion(region),
-	)
-	if err != nil {
-		log.Fatalf("unable to load SDK config, %v", err)
-	}
-	svc := dynamodb.NewFromConfig(cfg)
+func RetrieveTokenLocationMap(ctx context.Context) (map[string][]Location, bool, error) {
 
 	// Prepare input for Scan operation
 	input := &dynamodb.ScanInput{
@@ -82,8 +71,7 @@ func RetrieveTokenLocationMap() (map[string][]Location, bool, error) {
 	// Perform Scan operation
 	result, err := svc.Scan(context.Background(), input)
 	if err != nil {
-		fmt.Println("Error scanning DynamoDB table:", err)
-		return nil, true, err
+		return nil, true, errors.New("Error scanning DynamoDB table: " + err.Error())
 	}
 
 	// Convert DynamoDB items to map[string][]Location

@@ -1,6 +1,7 @@
 package gonotify
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -17,7 +18,7 @@ type Location struct {
 	Latitude  string `json:"latitude"`
 	Longitude string `json:"longitude"`
 	Name      string `json:"name"`
-	Unit    string   `json:"unit"`
+	Unit      string `json:"unit"`
 }
 
 // Struct used to deserialize a payload sent when adding or removing a location
@@ -29,8 +30,11 @@ type LocationAddRequest struct {
 // A map with token keys and location values
 var TokenLocationMap map[string][]Location
 
+// A context used to call DynamoDB methods
+var ctx = context.Background()
+
 func ReadRemoteTableContents() error {
-	result, isEmpty, err := RetrieveTokenLocationMap()
+	result, isEmpty, err := RetrieveTokenLocationMap(ctx)
 	if err != nil {
 		return fmt.Errorf("error reading remote table contents: %v", err)
 	}
@@ -67,7 +71,10 @@ func RegisterToken(res http.ResponseWriter, req *http.Request) {
 
 	if _, exists := TokenLocationMap[newToken]; !exists {
 		TokenLocationMap[newToken] = []Location{}
-		UpdateTokenLocationMap(TokenLocationMap)
+		if err := UpdateTokenLocationMap(ctx, TokenLocationMap); err != nil {
+			http.Error(res, "API failed to register token", http.StatusInternalServerError)
+			return
+		}
 		fmt.Println("Added token: ", newToken)
 	}
 
@@ -100,6 +107,10 @@ func HandleLocationAdd(res http.ResponseWriter, req *http.Request) {
 	if locations, exists := TokenLocationMap[token]; !exists {
 		// If the token doesn't exist, associate it with a new slice containing the new location
 		TokenLocationMap[token] = []Location{newLocation}
+		if err := UpdateTokenLocationMap(ctx, TokenLocationMap); err != nil {
+			http.Error(res, "API failed to register token", http.StatusInternalServerError)
+			return
+		}
 		fmt.Println("Location added for the token:", token)
 	} else {
 		// Token exists, check if the location already exists
@@ -114,17 +125,16 @@ func HandleLocationAdd(res http.ResponseWriter, req *http.Request) {
 		// If the location doesn't exist, add it to the slice
 		if !locationExists {
 			TokenLocationMap[token] = append(TokenLocationMap[token], newLocation)
-			UpdateTokenLocationMap(TokenLocationMap)
+			if err := UpdateTokenLocationMap(ctx, TokenLocationMap); err != nil {
+				http.Error(res, "API failed to add location", http.StatusInternalServerError)
+				return
+			}
 			fmt.Println("Location added for the token:", token)
 		} else {
 			fmt.Println("Location already exists for the token:", token)
 		}
 	}
 
-	// Print the updated map
-	fmt.Printf("Updated TokenLocationMap: %v\n", TokenLocationMap)
-
-	// Respond with success status
 	res.WriteHeader(http.StatusCreated)
 }
 
@@ -166,16 +176,15 @@ func HandleLocationRemove(res http.ResponseWriter, req *http.Request) {
 		// If the location exists, remove it from the slice
 		if locationIndex != -1 {
 			TokenLocationMap[token] = append(locations[:locationIndex], locations[locationIndex+1:]...)
-			UpdateTokenLocationMap(TokenLocationMap)
+			if err := UpdateTokenLocationMap(ctx, TokenLocationMap); err != nil {
+				http.Error(res, "API failed to remove location", http.StatusInternalServerError)
+				return
+			}
 			fmt.Println("Location removed for the token:", token)
 		} else {
 			fmt.Println("Location not found for the token:", token)
 		}
 	}
 
-	// Print the updated map
-	fmt.Printf("Updated TokenLocationMap: %v\n", TokenLocationMap)
-
-	// Respond with success status
 	res.WriteHeader(http.StatusCreated)
 }

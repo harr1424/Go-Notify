@@ -5,20 +5,20 @@ import (
 	"log"
 
 	"github.com/sideshow/apns2"
-	PAYLOAD "github.com/sideshow/apns2/payload"
-	APNS "github.com/sideshow/apns2/token"
+	payload "github.com/sideshow/apns2/payload"
+	token "github.com/sideshow/apns2/token"
 )
 
 func sendPushNotification(targetToken string, location string) {
 
 	// load signing key from file
-	authKey, err := APNS.AuthKeyFromFile("apnkey.p8")
+	authKey, err := token.AuthKeyFromFile("apnkey.p8")
 	if err != nil {
 		log.Println("Error sending push notification:", err)
 	}
 
 	// Generate JWT used for APNs
-	requestToken := &APNS.Token{
+	requestToken := &token.Token{
 		AuthKey: authKey,
 		KeyID:   signingKey,
 		TeamID:  teamID,
@@ -26,7 +26,7 @@ func sendPushNotification(targetToken string, location string) {
 
 	// Construct alert information from alert struct
 	alertSubtitle := fmt.Sprintf("Frost Alert for %s", location)
-	payload := PAYLOAD.NewPayload().AlertSubtitle(alertSubtitle)
+	payload := payload.NewPayload().AlertSubtitle(alertSubtitle)
 
 	notification := &apns2.Notification{
 		DeviceToken: targetToken,
