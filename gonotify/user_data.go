@@ -53,138 +53,110 @@ func ReadRemoteTableContents() error {
 // Called when the register endpoint is contacted
 // Expects to receive POST data describing an iOS device token
 func RegisterToken(res http.ResponseWriter, req *http.Request) {
-	if req.URL.Path != "/register" {
-		http.NotFound(res, req)
-		return
-	}
+    if req.URL.Path != "/register" {
+        http.NotFound(res, req)
+        return
+    }
 
-	var tokenRequest TokenRequest
+    var tokenRequest TokenRequest
+    decoder := json.NewDecoder(req.Body)
 
-	decoder := json.NewDecoder(req.Body)
+    if err := decoder.Decode(&tokenRequest); err != nil {
+        log.Println("Could not create new token from register request:", err)
+        http.Error(res, "Invalid request body", http.StatusBadRequest)
+        return
+    }
 
-	if err := decoder.Decode(&tokenRequest); err != nil {
-		log.Println("Could not create new token from register request): ", err)
-		return
-	}
+    newToken := tokenRequest.Token
 
-	newToken := tokenRequest.Token
+    if _, exists := TokenLocationMap[newToken]; !exists {
+        TokenLocationMap[newToken] = []Location{}
+        if err := UpdateTokenLocation(ctx, newToken, TokenLocationMap[newToken]); err != nil {
+            http.Error(res, "API failed to register token", http.StatusInternalServerError)
+            return
+        }
+        fmt.Println("Added token:", newToken)
+    }
 
-	if _, exists := TokenLocationMap[newToken]; !exists {
-		TokenLocationMap[newToken] = []Location{}
-		if err := UpdateTokenLocationMap(ctx, TokenLocationMap); err != nil {
-			http.Error(res, "API failed to register token", http.StatusInternalServerError)
-			return
-		}
-		fmt.Println("Added token: ", newToken)
-	}
-
-	res.WriteHeader(http.StatusCreated)
+    res.WriteHeader(http.StatusCreated)
 }
 
-// Called when the add_location endpoint is contacted
-// Expects to receive POST data describing an iOS device token and location
 func HandleLocationAdd(res http.ResponseWriter, req *http.Request) {
-	if req.URL.Path != "/add_location" {
-		http.NotFound(res, req)
-		return
-	}
-
-	var requestBody LocationAddRequest
-
-	decoder := json.NewDecoder(req.Body)
-
-	if err := decoder.Decode(&requestBody); err != nil {
-		log.Println("Could not add new token from add request:", err)
-		http.Error(res, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	// Extract token and location from the request payload
-	token := requestBody.Token
-	newLocation := requestBody.Location
-
-	// Check if the token exists in the map
-	if locations, exists := TokenLocationMap[token]; !exists {
-		// If the token doesn't exist, associate it with a new slice containing the new location
-		TokenLocationMap[token] = []Location{newLocation}
-		if err := UpdateTokenLocationMap(ctx, TokenLocationMap); err != nil {
-			http.Error(res, "API failed to register token", http.StatusInternalServerError)
-			return
-		}
-		fmt.Println("Location added for the token:", token)
-	} else {
-		// Token exists, check if the location already exists
-		locationExists := false
-		for _, loc := range locations {
-			if loc == newLocation {
-				locationExists = true
-				break
-			}
-		}
-
-		// If the location doesn't exist, add it to the slice
-		if !locationExists {
-			TokenLocationMap[token] = append(TokenLocationMap[token], newLocation)
-			if err := UpdateTokenLocationMap(ctx, TokenLocationMap); err != nil {
-				http.Error(res, "API failed to add location", http.StatusInternalServerError)
-				return
-			}
-			fmt.Println("Location added for the token:", token)
-		} else {
-			fmt.Println("Location already exists for the token:", token)
-		}
-	}
-
-	res.WriteHeader(http.StatusCreated)
+    handleLocationUpdate(res, req, true)
 }
 
-// Called when the remove_location endpoint is contacted
-// Expects to receive POST data describing an iOS device token and location
 func HandleLocationRemove(res http.ResponseWriter, req *http.Request) {
-	if req.URL.Path != "/remove_location" {
-		http.NotFound(res, req)
-		return
-	}
-
-	var requestBody LocationAddRequest
-
-	decoder := json.NewDecoder(req.Body)
-
-	if err := decoder.Decode(&requestBody); err != nil {
-		log.Println("Could not add new token from add request:", err)
-		http.Error(res, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	// Extract token and location from the request payload
-	token := requestBody.Token
-	locationToRemove := requestBody.Location
-
-	// Check if the token exists in the map
-	if locations, exists := TokenLocationMap[token]; !exists {
-		fmt.Println("Token not found:", token)
-	} else {
-		// Token exists, check if the location already exists
-		locationIndex := -1
-		for i, loc := range locations {
-			if loc.Latitude == locationToRemove.Latitude && loc.Longitude == locationToRemove.Longitude {
-				locationIndex = i
-				break
-			}
-		}
-
-		// If the location exists, remove it from the slice
-		if locationIndex != -1 {
-			TokenLocationMap[token] = append(locations[:locationIndex], locations[locationIndex+1:]...)
-			if err := UpdateTokenLocationMap(ctx, TokenLocationMap); err != nil {
-				http.Error(res, "API failed to remove location", http.StatusInternalServerError)
-				return
-			}
-			fmt.Println("Location removed for the token:", token)
-		} else {
-			fmt.Println("Location not found for the token:", token)
-		}
-	}
-
-	res.WriteHeader(http.StatusCreated)
+    handleLocationUpdate(res, req, false)
 }
+
+func handleLocationUpdate(res http.ResponseWriter, req *http.Request, isAdd bool) {
+    var requestBody LocationAddRequest
+    decoder := json.NewDecoder(req.Body)
+
+    if err := decoder.Decode(&requestBody); err != nil {
+        log.Println("Could not parse request:", err)
+        http.Error(res, "Invalid request body", http.StatusBadRequest)
+        return
+    }
+
+    token := requestBody.Token
+    location := requestBody.Location
+
+    if locations, exists := TokenLocationMap[token]; !exists {
+        if isAdd {
+            TokenLocationMap[token] = []Location{location}
+            if err := UpdateTokenLocation(ctx, token, TokenLocationMap[token]); err != nil {
+                http.Error(res, "API failed to register token", http.StatusInternalServerError)
+                return
+            }
+            fmt.Println("Location added for the token:", token)
+        } else {
+            fmt.Println("Token not found:", token)
+        }
+    } else {
+        if isAdd {
+            if !locationExists(locations, location) {
+                TokenLocationMap[token] = append(locations, location)
+                if err := UpdateTokenLocation(ctx, token, TokenLocationMap[token]); err != nil {
+                    http.Error(res, "API failed to add location", http.StatusInternalServerError)
+                    return
+                }
+                fmt.Println("Location added for the token:", token)
+            } else {
+                fmt.Println("Location already exists for the token:", token)
+            }
+        } else {
+            if index := findLocationIndex(locations, location); index != -1 {
+                TokenLocationMap[token] = append(locations[:index], locations[index+1:]...)
+                if err := UpdateTokenLocation(ctx, token, TokenLocationMap[token]); err != nil {
+                    http.Error(res, "API failed to remove location", http.StatusInternalServerError)
+                    return
+                }
+                fmt.Println("Location removed for the token:", token)
+            } else {
+                fmt.Println("Location not found for the token:", token)
+            }
+        }
+    }
+
+    res.WriteHeader(http.StatusCreated)
+}
+
+func locationExists(locations []Location, location Location) bool {
+    for _, loc := range locations {
+        if loc == location {
+            return true
+        }
+    }
+    return false
+}
+
+func findLocationIndex(locations []Location, location Location) int {
+    for i, loc := range locations {
+        if loc == location {
+            return i
+        }
+    }
+    return -1
+}
+

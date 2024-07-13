@@ -17,34 +17,31 @@ func InitializeDynamoDBClient(client *dynamodb.Client) {
 	svc = client
 }
 
-func UpdateTokenLocationMap(ctx context.Context, tokenLocationMap map[string][]Location) error {
+func UpdateTokenLocation(ctx context.Context, token string, locations []Location) error {
+    // Convert locations to DynamoDB AttributeValue
+    avList, err := attributeValueList(locations)
+    if err != nil {
+        return errors.New("error constructing avList: " + err.Error())
+    }
 
-	// Iterate over map and store data in DynamoDB
-	for token, locations := range tokenLocationMap {
-		// Convert locations to DynamoDB AttributeValue
-		avList, err := attributeValueList(locations)
-		if err != nil {
-			return errors.New("error constructing avList:" + err.Error())
-		}
+    // Prepare input for PutItem operation
+    input := &dynamodb.PutItemInput{
+        TableName: aws.String(dynamoDBTableName),
+        Item: map[string]types.AttributeValue{
+            "Token":     &types.AttributeValueMemberS{Value: token},
+            "Locations": avList,
+        },
+    }
 
-		// Prepare input for PutItem operation
-		input := &dynamodb.PutItemInput{
-			TableName: aws.String(dynamoDBTableName),
-			Item: map[string]types.AttributeValue{
-				"Token":     &types.AttributeValueMemberS{Value: token},
-				"Locations": avList,
-			},
-		}
+    // Perform PutItem operation
+    _, err = svc.PutItem(context.Background(), input)
+    if err != nil {
+        return errors.New("error putting item into DynamoDB: " + err.Error())
+    }
 
-		// Perform PutItem operation
-		_, err = svc.PutItem(context.Background(), input)
-		if err != nil {
-			return errors.New("error putting item into DynamoDB:" + err.Error())
-		}
-	}
-
-	return nil
+    return nil
 }
+
 
 // Helper function to convert a slice of locations to DynamoDB AttributeValue
 func attributeValueList(locations []Location) (types.AttributeValue, error) {
