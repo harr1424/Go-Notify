@@ -1,6 +1,7 @@
 module github.com/harr1424/Go-Notify
 
 go 1.21.1
+toolchain go1.23.7
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.24.0
@@ -24,6 +25,6 @@ require (
 	github.com/aws/smithy-go v1.19.0 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.1 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
-	golang.org/x/net v0.23.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/net v0.36.0 // indirect
+	golang.org/x/text v0.22.0 // indirect
 )
